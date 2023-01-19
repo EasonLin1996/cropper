@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.css">
+  <title>crpooie</title>
+</head>
+<style>
+  *, body, html {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  #fileselect {
+    display: none;
+  };
+  .container {
+    width: 100%;
+    height: 100vh;
+    position: relative;
+  }
+  .button-container {
+    margin-top: 10px;
+    display: flex;
+  }
+  .button-container .fake-button:first-child {
+    margin-right: 15px;
+  }
+  .flex-center {
+    margin: 0 auto;
+    width: 400px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+  .picture-box {
+    border: 1px solid #ccc;
+    width: 400px;
+    height: 400px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .fake-button {
+    cursor: pointer;
+    background-color: #fff;
+    border: 1px solid #999;
+    padding: 6px 12px;
+    border-radius: 15px;
+  }
+  .fake-button:hover {
+    background-color: #ccc;
+    transition: all .1s linear;
+  }
+</style>
+<body>
+  <div class="container">
+    <div id="upload" class="flex-center absolute">
+      <h1>
+        upload your picture
+      </h1>
+      <div class="picture-box">
+      </div>
+      <div class="button-container">
+        <label id='filedrag' for="fileselect" class="fake-button">選擇要上傳的檔案</label>
+        <input type="file" id="fileselect" name="fileselect" accept="image/*" />
+      </div>
+    </div>
+    <div id="crop" class="flex-center">
+      <h1>
+        cut your picture
+      </h1>
+      <div class="picture-box">
+        <div id="croppie"></div>
+      </div>
+      <div class="button-container">
+        <button class="fake-button" onclick="onBackClick('toUpload')">返回</button>
+        <button class="fake-button" onclick="onClipClick();">確認裁剪</button>
+      </div>
+    </div>
+    <div id="result" class="flex-center">
+      <h1>
+        your picture result
+      </h1>
+      <div class="picture-box" style="border:none">
+        <img id='result-img'src="" alt="" />
+      </div>
+      <div class="button-container">
+        <button class="fake-button" onclick="onBackClick('toCrop')">返回</button>
+        <button class="fake-button" onclick="onSendToServerClick()">確認上傳</button>
+      </div>
+    </div>
+  </div>
+  <script src="https://code.jquery.com/jquery-3.6.3.min.js" integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU=" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"></script>
+  <script>
+    // 這三個只有控制隱藏or not
+    const $upload = $('#upload');
+    const $crop = $('#crop');
+    const $result = $('#result');
+
+    // result Img
+    const $resultImg = $('#result-img');
+    // Clip block
+    const $croppie = $('#croppie');
+
+    const img_w = 300;
+    const img_h = 300;
+
+    // input and label area
+    const fileselect = document.getElementById("fileselect");
+    const filedrag = document.getElementById("filedrag");
+
+    const bindCropImg = (targetValue) => {
+      $croppie.croppie('bind', {
+        url: targetValue
+      });
+    }
+
+    const cropInit = () => {
+      $croppie.croppie({
+        viewport: {
+          width: 200,
+          height: 200,
+          type: 'circle',
+        },
+        mouseWheelZoom: true,
+        showZoomer: false,
+        enableOrientation: true
+      });
+    }
+
+    const onClipClick = () => {
+      $croppie.croppie('result', {
+        size: 'viewport',
+        format: 'png',
+        quality: 1
+        //0~1表示圖片質量
+      }).then(function (resp) {
+        $crop.hide();
+        $result.fadeIn(300);
+        $resultImg.attr("src", resp);
+      });
+    }
+
+    const onBackClick = (action) => {
+      switch (action) {
+        case 'toUpload':
+          fileselect.value = '';
+          $upload.fadeIn(300);
+          $crop.hide();
+          break;
+        case 'toCrop':
+          $crop.fadeIn(300);
+          $result.hide();
+          default:
+          break;
+      }
+    };
+
+    const onSendToServerClick = () => {
+      // 圖片傳到後端
+      const imgSrc = $resultImg.attr("src");
+      if (!imgSrc) {
+        throw new Error('cannot find src send to server');
+      }
+      const formData = new FormData();
+      formData.append('file', imgSrc);
+      console.log('formData', formData);
+      // $.ajax({
+      //   url: 'xxxxxxx',
+      //   type: 'post',
+      //   data: formData,
+      //   // dateType:'json',
+      //   headers:{
+      //     // 'Content-Type':'application/json;charset=utf8',
+      //     'Authorization': token,
+      //     // 'withCredentials': true,
+      //   },
+      //   success: (data) => {
+      //     alert('上傳成功');
+      //   },       
+      //   error: (data) => {
+      //     alert('上傳錯誤');
+      //   }, 
+      // });
+    };
+    
+    // file selection
+    const fileChangeHandler = (e) => {
+      // fetch FileList object
+      const files = e.target.files || e.dataTransfer.files;
+      if (files[0] && files[0].type.match('image.*')) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          bindCropImg(e.target.result);
+          $upload.hide();
+          $crop.fadeIn(300);
+        }
+        reader.readAsDataURL(files[0]);
+      }
+    }
+
+    //圖片上傳及拖曳上傳Z
+    const fileInit = () => {
+      // file select
+      $crop.hide();
+      $result.hide();
+      fileselect.addEventListener("change", fileChangeHandler, false);
+      // is XHR2 available?
+      const xhr = new XMLHttpRequest();
+      if (xhr.upload) {
+        // file drop
+        filedrag.addEventListener("drop", fileChangeHandler, false);
+      }
+    }
+
+    // Initialize
+    $(function(){
+      if (window.File && window.FileList && window.FileReader) {
+        fileInit();
+        cropInit();
+      } else {
+        alert('您的裝置不支援圖片上傳');
+      }
+    });
+
+  </script>
+</body>
+</html>

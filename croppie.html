@@ -12,6 +12,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    touch-action: none;
   }
   #fileselect {
     display: none;
@@ -136,10 +137,9 @@
 
     const onClipClick = () => {
       $croppie.croppie('result', {
+        type: 'base64',
         size: 'viewport',
         format: 'png',
-        quality: 1
-        //0~1表示圖片質量
       }).then(function (resp) {
         $crop.hide();
         $result.fadeIn(300);
